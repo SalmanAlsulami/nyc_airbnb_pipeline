@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 This step takes the best model, tagged with the "prod" tag, and tests it against the test dataset
 """
@@ -8,8 +7,8 @@ import wandb
 import mlflow
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
+import os
 
-from wandb_utils.log_artifact import log_artifact
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
@@ -18,7 +17,7 @@ logger = logging.getLogger()
 
 def go(args):
 
-    run = wandb.init(job_type="test_model")
+    run = wandb.init(project="nyc_airbnb", job_type="test_model")
     run.config.update(args)
 
     logger.info("Downloading artifacts")
@@ -27,7 +26,10 @@ def go(args):
     model_local_path = run.use_artifact(args.mlflow_model).download()
 
     # Download test dataset
-    test_dataset_path = run.use_artifact(args.test_dataset).file()
+    
+    artifact = run.use_artifact(args.test_dataset)
+    artifact_dir = artifact.download()
+    test_dataset_path = os.path.join(artifact_dir, "test_data.csv")
 
     # Read test dataset
     X_test = pd.read_csv(test_dataset_path)
